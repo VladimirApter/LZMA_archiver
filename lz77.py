@@ -130,8 +130,3 @@ class LZ77:
     def _write_byte(byte, file):
         byte = byte.to_bytes(1, byteorder='big')
         file.write(byte)
-
-
-lz77 = LZ77(2048, 64)
-lz77.compress('input.txt', 'output.bin')
-lz77.decompress('output.bin', 'decompressed.txt')
