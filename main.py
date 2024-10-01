@@ -4,7 +4,7 @@ from time import time
 from lz77 import LZ77
 from delta_coding import Delta
 
-input_file = 'eng_input.txt'
+input_file = 'input.txt'
 decompressed_file = 'decompressed.txt'
 
 input_file_size = os.path.getsize(input_file)
@@ -42,21 +42,3 @@ print(f'delta + lz77:\n'
       f'    compressed file size - {delta_lz77_compressed_file_size}\n'
       f'    compress time {finish_delta_lz77_compress - start_delta_lz77_compress}\n'
       f'    decompress time {finish_delta_lz77_decompress - start_delta_lz77_decompress}\n\n')
-
-
-start_double_lz77_compress = time()
-lz77 = LZ77(4096, 32)
-lz77.compress(input_file, 'LZ77compressed1.bin')
-lz77.compress('LZ77compressed1.bin', 'LZ77compressed2.bin')
-finish_double_lz77_compress = time()
-double_lz77_compressed_file_size = os.path.getsize('LZ77compressed2.bin')
-start_double_lz77_decompress = time()
-lz77.decompress('LZ77compressed2.bin', 'LZ77decompressed1.bin')
-lz77.decompress('LZ77decompressed1.bin', decompressed_file)
-finish_double_lz77_decompress = time()
-
-print(f'lz77 + lz77:\n'
-      f'    input file size - {input_file_size}\n'
-      f'    compressed file size - {double_lz77_compressed_file_size}\n'
-      f'    compress time {finish_double_lz77_compress - start_double_lz77_compress}\n'
-      f'    decompress time {finish_double_lz77_decompress - start_double_lz77_decompress}\n\n')
