@@ -17,7 +17,7 @@ class BinaryDecimal:
     @staticmethod
     def deserialize_decimal(data):
         binary_decimal = pickle.loads(data)
-        return binary_decimal._to_decimal()
+        return BinaryDecimal._to_decimal(binary_decimal.binary_bytes, binary_decimal.precision)
 
     @staticmethod
     def _get_precision(decimal_number):
@@ -36,8 +36,9 @@ class BinaryDecimal:
         binary_bytes = bytes(int(binary_str[i:i+8], 2) for i in range(0, len(binary_str), 8))
         return binary_bytes
 
-    def _to_decimal(self):
-        binary_str = ''.join(format(byte, '08b') for byte in self.binary_bytes)
+    @staticmethod
+    def _to_decimal(binary_bytes, precision):
+        binary_str = ''.join(format(byte, '08b') for byte in binary_bytes)
         integer_number = int(binary_str, 2)
-        decimal_number = Decimal(integer_number) / (10 ** self.precision)
+        decimal_number = Decimal(integer_number) / (10 ** precision)
         return decimal_number

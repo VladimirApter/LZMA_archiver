@@ -26,7 +26,7 @@ print(f'lz77:\n'
       f'    decompress time - {finish_lz77_decompress - start_lz77_decompress}\n\n')
 
 
-start_delta_lz77_compress = time()
+'''start_delta_lz77_compress = time()
 Delta.encode(input_file, 'delta_encoded.bin')
 lz77 = LZ77(4096, 32)
 lz77.compress('delta_encoded.bin', 'LZ77compressed.bin')
@@ -41,4 +41,4 @@ print(f'delta + lz77:\n'
       f'    input file size - {input_file_size}\n'
       f'    compressed file size - {delta_lz77_compressed_file_size}\n'
       f'    compress time {finish_delta_lz77_compress - start_delta_lz77_compress}\n'
-      f'    decompress time {finish_delta_lz77_decompress - start_delta_lz77_decompress}\n\n')
+      f'    decompress time {finish_delta_lz77_decompress - start_delta_lz77_decompress}\n\n')'''
