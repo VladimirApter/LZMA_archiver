@@ -1,10 +1,9 @@
-import os
 import pickle
 from decimal import *
-from time import time, sleep
 
 from binary_decimal import BinaryDecimal
 from encoded_data import EncodedData
+import main
 
 TEMP_ENCODED_VALUE_ACCURACY = 10
 INTERVALS_DICT_ACCURACY = 10
@@ -15,34 +14,54 @@ class ArithmeticCoding:
     intervals_dict_keys = None
     intervals_dict_len = None
 
-    def encode(self, input_file_path, output_file_path):
-        self.intervals_dict = self._get_intervals_dict(input_file_path)
-        self.intervals_dict_keys = list(self.intervals_dict.keys())
-        input_file_size = os.path.getsize(input_file_path)
+    def encode(self, input_file_path, output_file_path, quality):
+        read_part_size = 0
+        if quality == main.Quality.low:
+            read_part_size = 1000
+        if quality == main.Quality.medium:
+            read_part_size = 2500
+        if quality == main.Quality.high:
+            read_part_size = 10000
 
-        low = Decimal(0)
-        high = Decimal(1)
+        self.intervals_dict = self._get_intervals_dict(input_file_path, read_part_size)
+        self.intervals_dict_keys = list(self.intervals_dict.keys())
+
+        with open(output_file_path, 'w') as _:
+            pass  # clean file for encoded data
+
+        with open(output_file_path, 'ab') as output_file:
+            compressed_dict = self.get_str_dict(self.intervals_dict)
+            pickle.dump(compressed_dict, output_file)
 
         getcontext().prec = max(TEMP_ENCODED_VALUE_ACCURACY, 1)
 
-        with open(input_file_path, 'rb') as input_file:
-            while True:
-                byte = input_file.read(1)
-                if not byte:
+        offset = 0
+        while True:
+            low = Decimal(0)
+            high = Decimal(1)
+
+            with open(input_file_path, 'rb') as input_file:
+                input_file.seek(offset)
+
+                bytes_str = input_file.read(read_part_size)
+                if not bytes_str:
                     break
-                low, high = self._get_new_low_high(low, high, byte)
+                for byte_str in bytes_str:
+                    byte = byte_str.to_bytes(1, byteorder='big')
+                    low, high = self._get_new_low_high(low, high, byte)
 
-        encoded_value = self._find_minimal_decimal(low, high)
-        encoded_bytes = BinaryDecimal.serialize_decimal(encoded_value)
-        compressed_dict = EncodedData.get_str_dict(self.intervals_dict)
+            encoded_value = self._find_minimal_decimal(low, high)
+            encoded_bytes = BinaryDecimal.serialize_decimal(encoded_value)
 
-        encoded_data = EncodedData(input_file_size, compressed_dict, encoded_bytes)
+            encoded_data = EncodedData(len(bytes_str), encoded_bytes)
 
-        with open(output_file_path, 'ab') as output_file:
-            pickle.dump(encoded_data, output_file)
+            with open(output_file_path, 'ab') as output_file:
+                pickle.dump(encoded_data, output_file)
+
+            offset += read_part_size
 
     @staticmethod
-    def _get_intervals_dict(input_file_path):
+    def _get_intervals_dict(input_file_path, read_part_size):
         def get_min_value(probability_dict):
             min_value = next(iter(probability_dict.values()))
 
@@ -88,7 +107,7 @@ class ArithmeticCoding:
         min_accuracy = get_min_accuracy(min_probability)
 
         global TEMP_ENCODED_VALUE_ACCURACY
-        TEMP_ENCODED_VALUE_ACCURACY = min_accuracy * bytes_count
+        TEMP_ENCODED_VALUE_ACCURACY = min_accuracy * read_part_size
 
         global INTERVALS_DICT_ACCURACY
         INTERVALS_DICT_ACCURACY = min_accuracy
@@ -103,6 +122,21 @@ class ArithmeticCoding:
 
         intervals_dict[list(intervals_dict.keys())[-1]] = Decimal(1)  # this is elimination of float numbers error
         return intervals_dict
+
+    @staticmethod
+    def get_str_dict(decimal_dict):
+        str_dict = {}
+        for key in decimal_dict.keys():
+            interval = decimal_dict[key]
+            str_dict[key] = interval.to_eng_string()
+        return str_dict
+
+    @staticmethod
+    def get_decimal_dict(str_dict):
+        decimal_dict = {}
+        for key in str_dict.keys():
+            decimal_dict[key] = Decimal(str_dict[key])
+        return decimal_dict
 
     def _get_new_low_high(self, low, high, byte):
         byte_low, byte_high = self._get_byte_low_high(byte)
@@ -140,7 +174,9 @@ class ArithmeticCoding:
         return (low + high) / Decimal(2)
 
     def decode(self, input_file_path, output_file_path):
-        encoded_data_objs = self.deserialize_objects(input_file_path)
+        self.intervals_dict, encoded_data_objs = self.deserialize_file(input_file_path)
+        self.intervals_dict_keys = list(self.intervals_dict.keys())
+        self.intervals_dict_len = len(self.intervals_dict)
 
         with open(output_file_path, 'w') as _:
             pass  # clean file for encoded data
@@ -148,9 +184,6 @@ class ArithmeticCoding:
         for encoded_data in encoded_data_objs:
             encoded_value = BinaryDecimal.deserialize_decimal(encoded_data.value)
             message_length = encoded_data.message_length
-            self.intervals_dict = EncodedData.get_decimal_dict(encoded_data.intervals_dict)
-            self.intervals_dict_keys = list(self.intervals_dict.keys())
-            self.intervals_dict_len = len(self.intervals_dict)
 
             low = Decimal(0)
             high = Decimal(1)
@@ -161,16 +194,18 @@ class ArithmeticCoding:
                     output_file.write(byte)
 
     @staticmethod
-    def deserialize_objects(file_path):
+    def deserialize_file(file_path):
         objects = []
         with open(file_path, 'rb') as file:
+            str_dict = pickle.load(file)
+            intervals_dict = ArithmeticCoding.get_decimal_dict(str_dict)
             while True:
                 try:
                     obj = pickle.load(file)
                     objects.append(obj)
                 except EOFError:
                     break
-        return objects
+        return intervals_dict, objects
 
     def decode_binary_search(self, encoded_value, low, high):
         left, right = 0, self.intervals_dict_len
@@ -185,36 +220,3 @@ class ArithmeticCoding:
                 right = mid - 1
             elif current_high < encoded_value:
                 left = mid + 1
-
-
-input_file = 'ac_test.txt'
-encoded_file = 'ac_test_encoded.txt'
-decoded_file = 'ac_test_decoded.txt'
-
-with open(encoded_file, 'w') as _:
-    pass  # clean file for encoded data
-
-start = time()
-coder = ArithmeticCoding()
-coder.encode(input_file, encoded_file)
-coder.decode(encoded_file, decoded_file)
-finish = time()
-print(finish - start)
-print(f"original: {os.path.getsize(input_file)}\ncompresssed: {os.path.getsize(encoded_file)}")
-
-print()
-
-with open(encoded_file, 'w') as _:
-    pass  # clean file for encoded data
-
-input_file1 = 'ac_test1.txt'
-input_file2 = 'ac_test2.txt'
-
-start = time()
-coder = ArithmeticCoding()
-coder.encode(input_file1, encoded_file)
-coder.encode(input_file2, encoded_file)
-coder.decode(encoded_file, decoded_file)
-finish = time()
-print(finish - start)
-print(f"original: {os.path.getsize(input_file1) + os.path.getsize(input_file2)}\ncompresssed: {os.path.getsize(encoded_file)}")
