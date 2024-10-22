@@ -1,9 +1,10 @@
+import os.path
 import pickle
 from decimal import *
 
 from binary_decimal import BinaryDecimal
 from encoded_data import EncodedData
-import main
+from quality import Quality
 
 TEMP_ENCODED_VALUE_ACCURACY = 10
 INTERVALS_DICT_ACCURACY = 10
@@ -14,24 +15,31 @@ class ArithmeticCoding:
     intervals_dict_keys = None
     intervals_dict_len = None
 
-    def encode(self, input_file_path, output_file_path, quality):
+    def __init__(self, quality):
+        self.quality = quality
+
+    def encode(self, input_file_path, output_file_path):
+        with open(output_file_path, 'w') as _:
+            pass  # clean file for encoded data
+
+        with open(output_file_path, 'ab') as output_file:
+            pickle.dump(self.quality, output_file)
+
         read_part_size = 0
-        if quality == main.Quality.low:
+        if self.quality == Quality.low:
             read_part_size = 1000
-        if quality == main.Quality.medium:
+        if self.quality == Quality.medium:
             read_part_size = 2500
-        if quality == main.Quality.high:
+        if self.quality == Quality.high:
             read_part_size = 10000
 
         self.intervals_dict = self._get_intervals_dict(input_file_path, read_part_size)
         self.intervals_dict_keys = list(self.intervals_dict.keys())
 
-        with open(output_file_path, 'w') as _:
-            pass  # clean file for encoded data
-
         with open(output_file_path, 'ab') as output_file:
-            compressed_dict = self.get_str_dict(self.intervals_dict)
+            compressed_dict = self._get_str_dict(self.intervals_dict)
             pickle.dump(compressed_dict, output_file)
+            pickle.dump(max(TEMP_ENCODED_VALUE_ACCURACY, 1), output_file)
 
         getcontext().prec = max(TEMP_ENCODED_VALUE_ACCURACY, 1)
 
@@ -107,7 +115,7 @@ class ArithmeticCoding:
         min_accuracy = get_min_accuracy(min_probability)
 
         global TEMP_ENCODED_VALUE_ACCURACY
-        TEMP_ENCODED_VALUE_ACCURACY = min_accuracy * read_part_size
+        TEMP_ENCODED_VALUE_ACCURACY = min_accuracy * read_part_size + 150
 
         global INTERVALS_DICT_ACCURACY
         INTERVALS_DICT_ACCURACY = min_accuracy
@@ -124,7 +132,7 @@ class ArithmeticCoding:
         return intervals_dict
 
     @staticmethod
-    def get_str_dict(decimal_dict):
+    def _get_str_dict(decimal_dict):
         str_dict = {}
         for key in decimal_dict.keys():
             interval = decimal_dict[key]
@@ -132,7 +140,7 @@ class ArithmeticCoding:
         return str_dict
 
     @staticmethod
-    def get_decimal_dict(str_dict):
+    def _get_decimal_dict(str_dict):
         decimal_dict = {}
         for key in str_dict.keys():
             decimal_dict[key] = Decimal(str_dict[key])
@@ -197,8 +205,10 @@ class ArithmeticCoding:
     def deserialize_file(file_path):
         objects = []
         with open(file_path, 'rb') as file:
+            quality = pickle.load(file)
             str_dict = pickle.load(file)
-            intervals_dict = ArithmeticCoding.get_decimal_dict(str_dict)
+            intervals_dict = ArithmeticCoding._get_decimal_dict(str_dict)
+            getcontext().prec = int(pickle.load(file))
             while True:
                 try:
                     obj = pickle.load(file)

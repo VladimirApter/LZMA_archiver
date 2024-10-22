@@ -1,7 +1,17 @@
+from quality import Quality
+
+
 class LZ77:
-    def __init__(self, buffer_size, lookahead_size):
-        self.buffer_size = buffer_size
-        self.lookahead_size = lookahead_size
+    def __init__(self, quality):
+        if quality == Quality.low:
+            self.buffer_size = 1024
+            self.lookahead_size = 12
+        if quality == Quality.medium:
+            self.buffer_size = 2048
+            self.lookahead_size = 12
+        if quality == Quality.high:
+            self.buffer_size = 4096
+            self.lookahead_size = 16
 
     def compress(self, input_file_path, output_file_path):
         with open(input_file_path, 'rb') as input_file, \

@@ -1,6 +1,5 @@
-from decimal import Decimal, getcontext
+from decimal import Decimal
 import pickle
-
 
 class BinaryDecimal:
     def __init__(self, binary_bytes, precision):
@@ -22,23 +21,23 @@ class BinaryDecimal:
     @staticmethod
     def _get_precision(decimal_number):
         decimal_str = str(decimal_number)
+        if 'E' in decimal_str:
+            decimal_str = format(decimal_number, 'f')
         if '.' in decimal_str:
-            return len(decimal_str.split('.')[1])
+            print(decimal_str)
+            integer_part, fractional_part = decimal_str.split('.')
+            return len(fractional_part)
         else:
             return 0
 
     @staticmethod
     def _decimal_to_binary_bytes(decimal_number, precision):
         integer_number = int(decimal_number * (10 ** precision))
-        binary_str = bin(integer_number)[2:]  # Убираем префикс '0b'
-        while len(binary_str) % 8 != 0:
-            binary_str = '0' + binary_str
-        binary_bytes = bytes(int(binary_str[i:i+8], 2) for i in range(0, len(binary_str), 8))
+        binary_bytes = integer_number.to_bytes((integer_number.bit_length() + 7) // 8, byteorder='big')
         return binary_bytes
 
     @staticmethod
     def _to_decimal(binary_bytes, precision):
-        binary_str = ''.join(format(byte, '08b') for byte in binary_bytes)
-        integer_number = int(binary_str, 2)
+        integer_number = int.from_bytes(binary_bytes, byteorder='big')
         decimal_number = Decimal(integer_number) / (10 ** precision)
         return decimal_number
