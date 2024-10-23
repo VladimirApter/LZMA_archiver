@@ -24,7 +24,6 @@ class BinaryDecimal:
         if 'E' in decimal_str:
             decimal_str = format(decimal_number, 'f')
         if '.' in decimal_str:
-            print(decimal_str)
             integer_part, fractional_part = decimal_str.split('.')
             return len(fractional_part)
         else:

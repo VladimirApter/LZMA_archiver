@@ -1,7 +1,8 @@
-from enum import Enum
+from combine import *
+from quality import Quality
 
+file = r"file_or_directory_path"
+file_name = file.split('.')[0]
 
-class Quality(Enum):
-    low = 1
-    medium = 2
-    high = 3
+combine_compress(file, Quality.high)
+combine_decompress(f"{file_name}.lzma")
