@@ -1,9 +1,8 @@
-import os.path
 import pickle
 from decimal import *
 
-from binary_decimal import BinaryDecimal
-from encoded_data import EncodedData
+from bd import BDec
+from ed import ED
 from quality import Quality
 
 TEMP_ENCODED_VALUE_ACCURACY = 10
@@ -58,13 +57,13 @@ class ArithmeticCoding:
                     byte = byte_str.to_bytes(1, byteorder='big')
                     low, high = self._get_new_low_high(low, high, byte)
 
-            encoded_value = self._find_minimal_decimal(low, high)
-            encoded_bytes = BinaryDecimal.serialize_decimal(encoded_value)
+            v = self._find_minimal_decimal(low, high)
+            b = BDec.serialize_decimal(v)
 
-            encoded_data = EncodedData(len(bytes_str), encoded_bytes)
+            d = ED(len(bytes_str), b)
 
             with open(output_file_path, 'ab') as output_file:
-                pickle.dump(encoded_data, output_file)
+                pickle.dump(d, output_file)
 
             offset += read_part_size
 
@@ -136,14 +135,20 @@ class ArithmeticCoding:
         str_dict = {}
         for key in decimal_dict.keys():
             interval = decimal_dict[key]
-            str_dict[key] = interval.to_eng_string()
+            str_interval = interval.to_eng_string()
+            if '.' in str_interval:
+                str_interval = str_interval.split('.')[1]
+            str_dict[key] = str_interval
         return str_dict
 
     @staticmethod
     def _get_decimal_dict(str_dict):
         decimal_dict = {}
         for key in str_dict.keys():
-            decimal_dict[key] = Decimal(str_dict[key])
+            str_interval = str_dict[key]
+            if str_interval != '1':
+                str_interval = f'0.{str_interval}'
+            decimal_dict[key] = Decimal(str_interval)
         return decimal_dict
 
     def _get_new_low_high(self, low, high, byte):
@@ -190,8 +195,8 @@ class ArithmeticCoding:
             pass  # clean file for encoded data
 
         for encoded_data in encoded_data_objs:
-            encoded_value = BinaryDecimal.deserialize_decimal(encoded_data.value)
-            message_length = encoded_data.message_length
+            encoded_value = BDec.deserialize_decimal(encoded_data.v)
+            message_length = encoded_data.ml
 
             low = Decimal(0)
             high = Decimal(1)

@@ -3,6 +3,14 @@ from arithmetic_coding import ArithmeticCoding
 from metadata_work import *
 
 
+def calculate_compression_percentage(original_path, compressed_path):
+    original_size = os.path.getsize(original_path)
+    compressed_size = os.path.getsize(compressed_path)
+
+    compression_percentage = (1 - (compressed_size / original_size)) * 100
+    return compression_percentage
+
+
 def combine_compress(input_path, quality):
     directory = os.path.dirname(input_path)
     input_file_name = os.path.basename(input_path).split('.')[0]
@@ -18,6 +26,8 @@ def combine_compress(input_path, quality):
 
     arithmetic_coder = ArithmeticCoding(quality)
     arithmetic_coder.encode(temp_file2, output_file_path)
+
+    print(f'Исходныые данные сжаты на {calculate_compression_percentage(temp_file1, output_file_path):.2f}%')
 
     os.remove(temp_file1)
     os.remove(temp_file2)

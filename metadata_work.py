@@ -86,4 +86,4 @@ def restore_directory_structure(input_file, output_path):
         file_path = os.path.join(output_path, file_name)
         with open(file_path, 'wb') as f:
             f.write(file_info['content'])
-        #os.utime(file_path, (file_info['accessed'], file_info['modified']))
+        os.utime(file_path, (file_info['accessed'], file_info['modified']))

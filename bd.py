@@ -1,22 +1,22 @@
 from decimal import Decimal
 import pickle
 
-class BinaryDecimal:
+class BDec:
     def __init__(self, binary_bytes, precision):
-        self.binary_bytes = binary_bytes
-        self.precision = precision
+        self.bts = binary_bytes
+        self.ps = precision
 
     @staticmethod
     def serialize_decimal(decimal_number):
-        precision = BinaryDecimal._get_precision(decimal_number)
-        binary_bytes = BinaryDecimal._decimal_to_binary_bytes(decimal_number, precision)
-        binary_decimal = BinaryDecimal(binary_bytes, precision)
+        precision = BDec._get_precision(decimal_number)
+        binary_bytes = BDec._decimal_to_binary_bytes(decimal_number, precision)
+        binary_decimal = BDec(binary_bytes, precision)
         return pickle.dumps(binary_decimal)
 
     @staticmethod
     def deserialize_decimal(data):
         binary_decimal = pickle.loads(data)
-        return BinaryDecimal._to_decimal(binary_decimal.binary_bytes, binary_decimal.precision)
+        return BDec._to_decimal(binary_decimal.bts, binary_decimal.ps)
 
     @staticmethod
     def _get_precision(decimal_number):
