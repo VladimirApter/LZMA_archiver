@@ -1,6 +1,7 @@
 import os
 import pickle
 
+
 def save_directory_structure(path, output_file):
     def get_file_info(file_path):
         stat_info = os.stat(file_path)
@@ -42,6 +43,7 @@ def save_directory_structure(path, output_file):
     with open(output_file, 'wb') as f:
         pickle.dump((os.path.basename(path), structure), f)
 
+
 def restore_directory_structure(input_file, output_path):
     with open(input_file, 'rb') as f:
         top_level_name, structure = pickle.load(f)
@@ -71,15 +73,12 @@ def restore_directory_structure(input_file, output_path):
             unique_name = f"{os.path.splitext(unique_name)[0]}_lzma_decompressed{os.path.splitext(unique_name)[1]}"
         return unique_name
 
-    # Проверяем, является ли верхний уровень директорией или файлом
     if structure['']['dirs'] or len(structure['']['files']) > 1:
-        # Если это директория или содержит несколько файлов
         top_level_name = get_unique_name(top_level_name, output_path)
         top_level_path = os.path.join(output_path, top_level_name)
         os.makedirs(top_level_path, exist_ok=True)
         restore_structure(structure, top_level_path)
     else:
-        # Если это отдельный файл
         file_info = structure['']['files'][0]
         file_name = get_unique_name(file_info['name'], output_path)
 

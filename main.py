@@ -1,7 +1,7 @@
 from combine import *
 from quality import Quality
 
-file = r"C:\Users\admin\Desktop\spaceway code.txt"
+file = ""
 file_name = file.split('.')[0]
 
 combine_compress(file, Quality.high)
