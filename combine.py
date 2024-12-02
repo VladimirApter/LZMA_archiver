@@ -43,7 +43,7 @@ def calculate_compression_percentage(original_path, compressed_path):
 
 def combine_compress(input_path, quality):
     directory = os.path.dirname(input_path)
-    input_file_name = os.path.basename(input_path).split('.')[0]
+    input_file_name = os.path.basename(input_path)
     output_file_path = os.path.join(directory, f'{input_file_name}.lzma')
 
     temp_file1 = f'{input_file_name}_tmp1.bin'
@@ -86,8 +86,10 @@ def combine_decompress(input_file_path):
     lz77_coder = LZ77(quality)
     lz77_coder.decompress(temp_file1, temp_file2)
 
-    restore_directory_structure(temp_file2, directory)
+    result_name = restore_directory_structure(temp_file2, directory)
 
     os.remove(temp_file1)
     os.remove(temp_file2)
     os.remove(temp_file3)
+
+    return result_name

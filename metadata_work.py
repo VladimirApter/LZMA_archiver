@@ -78,6 +78,8 @@ def restore_directory_structure(input_file, output_path):
         top_level_path = os.path.join(output_path, top_level_name)
         os.makedirs(top_level_path, exist_ok=True)
         restore_structure(structure, top_level_path)
+
+        return top_level_name
     else:
         file_info = structure['']['files'][0]
         file_name = get_unique_name(file_info['name'], output_path)
@@ -86,3 +88,5 @@ def restore_directory_structure(input_file, output_path):
         with open(file_path, 'wb') as f:
             f.write(file_info['content'])
         os.utime(file_path, (file_info['accessed'], file_info['modified']))
+
+        return file_name
