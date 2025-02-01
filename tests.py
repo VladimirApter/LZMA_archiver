@@ -44,6 +44,29 @@ class TestCompressionFunctions(unittest.TestCase):
         with self.assertRaises(ValueError):
             combine_decompress(corrupted_file_path)
 
+    def test_compress_and_decompress_binary_files(self):
+        sizes = [255, 256, 257]
+
+        for size in sizes:
+            binary_file_path = os.path.join(self.test_dir.name, f'binary_file_{size}.bin')
+            binary_data = b"0" * size
+
+            with open(binary_file_path, 'wb') as f:
+                f.write(binary_data)
+
+            compressed_file_path = binary_file_path + '.lzma'
+
+            combine_compress(binary_file_path, Quality.high)
+            self.assertTrue(os.path.exists(compressed_file_path))
+
+            decompressed_file_name = combine_decompress(compressed_file_path)
+            decompressed_file_path = os.path.join(os.path.dirname(binary_file_path), decompressed_file_name)
+            self.assertTrue(os.path.exists(decompressed_file_path))
+
+            with open(decompressed_file_path, 'rb') as f:
+                decompressed_content = f.read()
+            self.assertEqual(decompressed_content, binary_data)
+
 
 if __name__ == '__main__':
     unittest.main()
